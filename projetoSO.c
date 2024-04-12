@@ -41,6 +41,7 @@ void gerar_matriz(register int tamanho, char *nome_arq) {
     } 
     else {
         printf("O tamanho inserido para a matriz não pode ser gerado.");
+        exit(1);
     }
 }
 
@@ -118,22 +119,33 @@ int reduz_matriz(int *matriz, register int tamanho) {
 
 }
 
-int main() {
-    gerar_matriz(100, "arqA.dat");
-    gerar_matriz(100, "arqB.dat");
-    gerar_matriz(100, "arqC.dat");
+int main(int argc, char *argv[]) {
 
-    int *matrizA = leitura_matriz(100, "arqA.dat");
-    int *matrizB = leitura_matriz(100, "arqB.dat");
+    //Transformando de string para inteiro
+    int n = atoi(argv[1]);
+    int T = atoi(argv[2]);
 
-    int *matrizD = soma_matrizes(matrizA, matrizB, 100);
-    gravar_matriz(100, "arqD.dat", matrizD);
+    char *arqA = argv[3];
+    char *arqB = argv[4];
+    char *arqC = argv[5];
+    char *arqD = argv[6];
+    char *arqE = argv[7];
 
-    int* matrizC =  leitura_matriz(100, "arqC.dat");
+    gerar_matriz(T, arqA);
+    gerar_matriz(T, arqB);
+    gerar_matriz(T, arqC);
 
-    int *matrizE = multiplica_matrizes(matrizC, matrizD, 100);
-    gravar_matriz(100, "arqE.dat", matrizE);
-    printf("red: %d", reduz_matriz(matrizE, 100));
+    int *matrizA = leitura_matriz(T, arqA);
+    int *matrizB = leitura_matriz(T, arqB);
+
+    int *matrizD = soma_matrizes(matrizA, matrizB, T);
+    gravar_matriz(T, arqD, matrizD);
+
+    int* matrizC =  leitura_matriz(T, arqC);
+
+    int *matrizE = multiplica_matrizes(matrizC, matrizD, T);
+    gravar_matriz(T, arqE, matrizE);
+    printf("Matriz reduzida: %d", reduz_matriz(matrizE, T));
 
     free(matrizA);
     free(matrizB);
