@@ -1,6 +1,8 @@
 # Nome do projeto
 
 <img src="imagem.png" alt="Exemplo imagem">
+![image](https://github.com/naferrett/projeto-SO/assets/133066462/dc385714-ea8a-47c9-8440-a37142139935)
+
 
 Código do projeto final da matéria de Sistemas Operacionais (TT304A) da UNICAMP.
 Objetivo: ....
