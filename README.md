@@ -1,8 +1,6 @@
-# Nome do projeto
+# Múltiplas Threads em C
 
-<img src="imagem.png" alt="Exemplo imagem">
-![image](https://github.com/naferrett/projeto-SO/assets/133066462/dc385714-ea8a-47c9-8440-a37142139935)
-
+<img src="https://github.com/naferrett/projeto-SO/assets/133066462/462589ab-a574-4202-8ceb-d74aba4067cc" alt="Foca em Sistemas Operacionais">
 
 Código do projeto final da matéria de Sistemas Operacionais (TT304A) da UNICAMP.
 Objetivo: ....
