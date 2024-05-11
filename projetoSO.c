@@ -145,7 +145,12 @@ int main(int argc, char *argv[]) {
 
     int *matrizE = multiplica_matrizes(matrizC, matrizD, T);
     gravar_matriz(T, arqE, matrizE);
-    printf("Matriz reduzida: %d", reduz_matriz(matrizE, T));
+
+    printf("Redução: %d\n", reduz_matriz(matrizE, T));
+    printf("Tempo soma: \n");
+    printf("Tempo multiplicação: \n");
+    printf("Tempo redução: \n");
+    printf("Tempo total: \n");
 
     free(matrizA);
     free(matrizB);
