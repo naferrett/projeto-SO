@@ -6,7 +6,7 @@
 #define posicao(I, J, COLUNAS) ((I)*(COLUNAS) + (J))
 
 pthread_t thread_leitura[3];
-pthread_t thread_escrita;
+pthread_t thread_escrita[2];
 //pthread_t thread_processamento[n];
 
 parametros_thread *aloca_vetor_parametros(unsigned int tamanho) {
@@ -89,7 +89,15 @@ void* leitura_matriz(void *args) {
     return ((void*) matriz);
 }
 
-void gravar_matriz(int tamanho, char* nome_arq, int* matriz) {
+void* gravar_matriz(void *args) {
+
+    int tamanho;
+    char* nome_arq;
+    int* matriz;
+
+    tamanho = ((parametros_thread *) args)->tam_matriz;
+    nome_arq = ((parametros_thread *) args)->nome_arquivo;
+    matriz = ((parametros_thread *) args)->matriz;
 
     FILE* arq_matriz = abrir_arquivo(nome_arq, "w");
 
@@ -175,7 +183,7 @@ int main(int argc, char *argv[]) {
 
 /* *******************************PASSO 1******************************** */
     //fazer função pra isso
-    parametros_thread *parametros_leitura = aloca_vetor_parametros(2);
+    parametros_thread *parametros_leitura = aloca_vetor_parametros(3);
     parametros_leitura[0].tam_matriz = T;
     parametros_leitura[0].nome_arquivo = arqA;
     parametros_leitura[1].tam_matriz = T;
@@ -195,25 +203,40 @@ int main(int argc, char *argv[]) {
     int *matrizD = soma_matrizes(matrizA, matrizB, T);
 
 /* *******************************PASSO 3 e 4******************************** */
-    gravar_matriz(T, arqD, matrizD);
+    
+    parametros_thread *parametros_escrita = aloca_vetor_parametros(2);
+    parametros_escrita[0].tam_matriz = T;
+    parametros_escrita[0].nome_arquivo = arqD;
+    parametros_escrita[0].matriz = matrizD;
 
-    //disparando matriz C + matriz D
     parametros_leitura[2].tam_matriz = T;
     parametros_leitura[2].nome_arquivo = arqC;
 
+    pthread_create(&thread_escrita[0], NULL, gravar_matriz, (void*)&parametros_escrita[0]);
     pthread_create(&thread_leitura[2], NULL, leitura_matriz, (void*)&parametros_leitura[2]);
 
     void *matrizC;
 
     pthread_join(thread_leitura[2], &matrizC);
+    pthread_join(thread_escrita[0], NULL);
 
 /* *******************************PASSO 5******************************** */
     int *matrizE = multiplica_matrizes(matrizC, matrizD, T);
 
 /* *******************************PASSO 6******************************** */
-    gravar_matriz(T, arqE, matrizE);
-    printf("Redução: %d\n", reduz_matriz(matrizE, T));
+    //gravar_matriz(T, arqE, matrizE);
+    parametros_escrita[1].tam_matriz = T;
+    parametros_escrita[1].nome_arquivo = arqE;
+    parametros_escrita[1].matriz = matrizE;
 
+    //reduz_matriz(matrizE, T)
+
+    pthread_create(&thread_escrita[0], NULL, gravar_matriz, (void*)&parametros_escrita[0]);
+
+    pthread_join(thread_escrita[1], NULL);
+
+
+    printf("Redução: %d\n", 1);
     printf("Tempo soma: \n");
     printf("Tempo multiplicação: \n");
     //printf("Tempo redução: %.3ld\n", calculo_tempo(reduz_matriz));
