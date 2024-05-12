@@ -1,8 +1,28 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include "projetoSO.h"
 
 #define posicao(I, J, COLUNAS) ((I)*(COLUNAS) + (J))
+
+pthread_t thread_leitura[3];
+pthread_t thread_escrita;
+//pthread_t thread_processamento[n];
+
+parametros_thread *aloca_vetor_parametros(unsigned int tamanho) {
+  
+  parametros_thread *vetor;
+
+  if (tamanho<=0)
+    return NULL;
+
+  if ((vetor = (parametros_thread *) malloc(sizeof(parametros_thread)*tamanho)) == NULL){
+    printf("Não foi possível alocar o vetor. \n");
+    exit(EXIT_FAILURE);
+  }
+
+  return vetor;
+}
 
 FILE *abrir_arquivo(char* nome_arq, char* modo) {
     FILE *arq = fopen(nome_arq, modo);
@@ -45,11 +65,17 @@ void gerar_matriz(register int tamanho, char *nome_arq) {
     }
 }
 
-int* leitura_matriz(register int tamanho, char* nome_arq) {
+void* leitura_matriz(void *args) {
+
+    register int tamanho;
+    char* nome_arq;
+
+    tamanho = ((parametros_thread *) args)->tam_matriz;
+    nome_arq = ((parametros_thread *) args)->nome_arquivo;
+
 
     FILE* arq_matriz = abrir_arquivo(nome_arq, "r");
 
-    //alocação dinamica da matriz
     int *matriz = aloca_matriz(tamanho, tamanho);
     
     for(register int i = 0; i < tamanho; i++) {
@@ -60,7 +86,7 @@ int* leitura_matriz(register int tamanho, char* nome_arq) {
 
     fclose(arq_matriz);
 
-    return matriz;
+    return ((void*) matriz);
 }
 
 void gravar_matriz(int tamanho, char* nome_arq, int* matriz) {
@@ -119,9 +145,21 @@ int reduz_matriz(int *matriz, register int tamanho) {
 
 }
 
+/*
+clock_t calculo_tempo(int (*funcao)(int*, register int)) {
+
+    clock_t inicio, fim;
+    double tempo_total;
+    inicio = clock();
+    (*funcao)(int*, register int);
+    fim = clock() - inicio;
+    tempo_total = ((double) fim)/CLOCKS_PER_SEC;
+ 
+    return tempo_total;
+}*/
+
 int main(int argc, char *argv[]) {
 
-    //Transformando de string para inteiro
     int n = atoi(argv[1]);
     int T = atoi(argv[2]);
 
@@ -135,23 +173,53 @@ int main(int argc, char *argv[]) {
     gerar_matriz(T, arqB);
     gerar_matriz(T, arqC);
 
-    int *matrizA = leitura_matriz(T, arqA);
-    int *matrizB = leitura_matriz(T, arqB);
+/* *******************************PASSO 1******************************** */
+    //fazer função pra isso
+    parametros_thread *parametros_leitura = aloca_vetor_parametros(2);
+    parametros_leitura[0].tam_matriz = T;
+    parametros_leitura[0].nome_arquivo = arqA;
+    parametros_leitura[1].tam_matriz = T;
+    parametros_leitura[1].nome_arquivo = arqB;
 
+    pthread_create(&thread_leitura[0], NULL, leitura_matriz, (void*)&parametros_leitura[0]);
+    pthread_create(&thread_leitura[1], NULL, leitura_matriz, (void*)&parametros_leitura[1]);
+
+    void* matrizA;
+    void* matrizB;
+
+    pthread_join(thread_leitura[1], &matrizA);
+    pthread_join(thread_leitura[0], &matrizB);
+
+/* *******************************PASSO 2******************************** */
+    //crar thread de processamento
     int *matrizD = soma_matrizes(matrizA, matrizB, T);
+
+/* *******************************PASSO 3 e 4******************************** */
     gravar_matriz(T, arqD, matrizD);
 
-    int* matrizC =  leitura_matriz(T, arqC);
+    //disparando matriz C + matriz D
+    parametros_leitura[2].tam_matriz = T;
+    parametros_leitura[2].nome_arquivo = arqC;
 
+    pthread_create(&thread_leitura[2], NULL, leitura_matriz, (void*)&parametros_leitura[2]);
+
+    void *matrizC;
+
+    pthread_join(thread_leitura[2], &matrizC);
+
+/* *******************************PASSO 5******************************** */
     int *matrizE = multiplica_matrizes(matrizC, matrizD, T);
-    gravar_matriz(T, arqE, matrizE);
 
+/* *******************************PASSO 6******************************** */
+    gravar_matriz(T, arqE, matrizE);
     printf("Redução: %d\n", reduz_matriz(matrizE, T));
+
     printf("Tempo soma: \n");
     printf("Tempo multiplicação: \n");
-    printf("Tempo redução: \n");
+    //printf("Tempo redução: %.3ld\n", calculo_tempo(reduz_matriz));
     printf("Tempo total: \n");
 
+    free(parametros_leitura);
     free(matrizA);
     free(matrizB);
     free(matrizC);
