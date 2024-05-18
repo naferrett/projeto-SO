@@ -182,6 +182,9 @@ void *reduz_matriz(void* args) {
 //passos
 void* leitura_A_B(int T, char *arqA, char* arqB, int* matrizA, int* matrizB) {
 
+    pthread_t thread_leitura[2];
+    parametros_thread *parametros_leitura = aloca_vetor_parametros(2);
+
     parametros_leitura[0].tam_matriz = T;
     parametros_leitura[0].nome_arquivo = arqA;
     parametros_leitura[1].tam_matriz = T;
@@ -193,9 +196,12 @@ void* leitura_A_B(int T, char *arqA, char* arqB, int* matrizA, int* matrizB) {
     pthread_join(thread_leitura[1], (void**)&matrizA);
     pthread_join(thread_leitura[0], (void**)&matrizB);
 
+    free(parametros_leitura);
+    //pthread exit null?
+
 }
 
-void* soma_A_B(int qntd_por_thread, int T, int* matrizA, int* matrizB, int* matrizD) {
+void* soma_A_B(int qntd_thrds, int T, int* matrizA, int* matrizB, int* matrizD) {
 
     for(register int i = 0; i < n; i++) {
         parametros_processamento[i].indice_inicio = qntd_por_thread * i;
@@ -214,23 +220,35 @@ void* soma_A_B(int qntd_por_thread, int T, int* matrizA, int* matrizB, int* matr
 }
 
 void* gravar_D_ler_C(int T, char* arqC, char* arqD, int *matrizC, int* matrizD) {
+    pthread_t thread_escrita;
+    parametros_thread parametros_escrita;
+    
+    pthread_t thread_leitura;
+    parametros_thread parametros_leitura;
 
-    parametros_escrita[0].tam_matriz = T;
-    parametros_escrita[0].nome_arquivo = arqD;
-    parametros_escrita[0].matriz_final = matrizD;
+    parametros_escrita.tam_matriz = T;
+    parametros_escrita.nome_arquivo = arqD;
+    parametros_escrita.matriz_final = matrizD;
 
-    parametros_leitura[2].tam_matriz = T;
-    parametros_leitura[2].nome_arquivo = arqC;
+    parametros_leitura.tam_matriz = T;
+    parametros_leitura.nome_arquivo = arqC;
+    //matriz_final = matrizC?
+    //e dai retorna NULL?
 
-    pthread_create(&thread_escrita[0], NULL, gravar_matriz, (void*)&parametros_escrita[0]);
-    pthread_create(&thread_leitura[2], NULL, leitura_matriz, (void*)&parametros_leitura[2]);
+    pthread_create(&thread_escrita, NULL, gravar_matriz, (void*)&parametros_escrita);
+    pthread_create(&thread_leitura, NULL, leitura_matriz, (void*)&parametros_leitura);
 
-    pthread_join(thread_leitura[2], (void**)&matrizC);
-    pthread_join(thread_escrita[0], NULL);
+    pthread_join(thread_leitura, (void**)&matrizC);
+    pthread_join(thread_escrita, NULL);
 
 }
 
-void* multiplicar_D_C(int qntd_por_thread, int T, int* matrizC, int* matrizD, int* matrizE) {
+void* multiplicar_D_C(int qntd_thrds, int T, int* matrizC, int* matrizD, int* matrizE) {
+
+    pthread_t thread_processamento[qntd_thrds];
+    parametros_thread *parametros_processamento = aloca_vetor_parametros(qntd_thrds);
+
+    int qntd_por_thread = T/qntd_thrds;
 
         for(register int i = 0; i < n; i++) {
         parametros_processamento[i].indice_inicio = qntd_por_thread * i;
@@ -246,19 +264,29 @@ void* multiplicar_D_C(int qntd_por_thread, int T, int* matrizC, int* matrizD, in
     for(register int i = 0; i < n; i++) {
         pthread_join(thread_processamento[i], NULL);
     }
+
+    free(parametros_processamento);
+    //pthread exit null?
 }
 
-void* gravar_e_reduzir_E(int qntd_por_thread, int T, char *arqE, int* matrizE) {
+void* gravar_e_reduzir_E(int qntd_thrds, int T, char *arqE, int* matrizE) {
+    pthread_t thread_escrita;
+    parametros_thread parametros_escrita;
+
+    pthread_t thread_processamento[qntd_thrds];
+    parametros_thread *parametros_processamento = aloca_vetor_parametros(qntd_thrds);
+
+    int qntd_por_thread = T/qntd_thrds;
+
     //nao ta simultaneo essa bostaaaaaaaaaaaaa
-    //gravar_matriz(T, arqE, matrizE);
-    parametros_escrita[1].tam_matriz = T;
-    parametros_escrita[1].nome_arquivo = arqE;
-    parametros_escrita[1].matriz_final = matrizE;
+    parametros_escrita.tam_matriz = T;
+    parametros_escrita.nome_arquivo = arqE;
+    parametros_escrita.matriz_final = matrizE;
 
-    pthread_create(&thread_escrita[0], NULL, gravar_matriz, (void*)&parametros_escrita[0]);
-    pthread_join(thread_escrita[1], NULL);
+    //como gravação e reduçao vao ser simultaneos?
+    pthread_create(&thread_escrita, NULL, gravar_matriz, (void*)&parametros_escrita);
+    pthread_join(thread_escrita, NULL);
 
-    //reduz_matriz(matrizE, T)
     void* soma = NULL;
     int soma_total = 0;
 
@@ -277,6 +305,9 @@ void* gravar_e_reduzir_E(int qntd_por_thread, int T, char *arqE, int* matrizE) {
         free(soma);
     }
 
+    free(parametros_escrita);
+    free(parametros_processamento);
+    //pthread exit null?
 }
 
 clock_t calculo_tempo(void (*funcao)(void*)) {
@@ -321,15 +352,13 @@ int main(int argc, char *argv[]) {
     gerar_matriz(T, arqC);
 
     //declaração tem q ser aqui?
+    //acho que tem que ser nas funções ou globalmente
     pthread_t thread_leitura[3];
     pthread_t thread_escrita[2];
-    pthread_t thread_processamento[n];
 
     //tem q ser aqui?
     parametros_thread *parametros_leitura = aloca_vetor_parametros(3);
     parametros_thread *parametros_escrita = aloca_vetor_parametros(2);
-    parametros_thread *parametros_processamento = aloca_vetor_parametros(n);
-
 /* *******************************IMPRESSÃO******************************** */
     printf("Redução: %d\n", 1);
     printf("Tempo soma: \n");
@@ -344,7 +373,6 @@ int main(int argc, char *argv[]) {
     free(matrizE);
     free(parametros_leitura);
     free(parametros_escrita);
-    free(parametros_processamento);
 
     return 0;
 }
