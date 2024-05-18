@@ -111,10 +111,8 @@ void* gravar_matriz(void *args) {
 
 void *soma_matrizes(void* args) {
 
-    register int i, inicio, final;
+    int inicio, final;
     int *matriz_1, *matriz_2, *matriz_soma, tamanho;
-
-    //int *matriz_soma = aloca_matriz(tamanho, tamanho);
 
     inicio = ((parametros_thread*)args)->indice_inicio;
     final = ((parametros_thread*)args)->indice_final;
@@ -129,11 +127,22 @@ void *soma_matrizes(void* args) {
         }
     }
 
-    return ((void*) matriz_soma);
+    //return ((void*) matriz_soma);
+    return NULL 
+    //pthread exit?
 }
 
-int *multiplica_matrizes(int *matriz_1, int *matriz_2, register int tamanho) {
+void *multiplica_matrizes(void *args) {
 
+    register int i, inicio, final;
+    int *matriz_1, *matriz_2, *matriz_mult, tamanho;
+
+    inicio = ((parametros_thread*)args)->indice_inicio;
+    final = ((parametros_thread*)args)->indice_final;
+    tamanho = ((parametros_thread*)args)->tam_matriz;
+    matriz_1 = ((parametros_thread*)args)->matriz_1;
+    matriz_2 = ((parametros_thread*)args)->matriz_2;
+    matriz_soma = ((parametros_thread*)args)->matriz_final;
     int *matriz_mult = aloca_matriz(tamanho, tamanho);
 
     for(register int i = 0; i < tamanho; i++) {
@@ -142,7 +151,7 @@ int *multiplica_matrizes(int *matriz_1, int *matriz_2, register int tamanho) {
         }
     }
 
-    return matriz_mult;
+    return ((void*) matriz_mult);
 }
 
 void *reduz_matriz(void* args) {
@@ -167,7 +176,7 @@ void *reduz_matriz(void* args) {
 
 }
 
-void* leitura_A_B() {
+void* leitura_A_B(int T, char *arqA, char* arqB) {
 
     parametros_leitura[0].tam_matriz = T;
     parametros_leitura[0].nome_arquivo = arqA;
@@ -182,9 +191,9 @@ void* leitura_A_B() {
 
 }
 
-void* soma_A_B() {
+void* soma_A_B(int qntd_por_thread, int T, int* matrizA, int* matrizB, int* matrizD) {
 
-    for(int i = 0; i < n; i++) {
+    for(register int i = 0; i < n; i++) {
         parametros_processamento[i].indice_inicio = qntd_por_thread * i;
         parametros_processamento[i].indice_final = (qntd_por_thread * (i+1)) - 1;
         parametros_processamento[i].tam_matriz = T;
@@ -195,15 +204,12 @@ void* soma_A_B() {
         pthread_create(&thread_processamento[i], NULL, soma_matrizes, (void*) &parametros_processamento[i]);
     }
 
-    for(int i = 0; i < n; i++) {
-        //isso ta cagadooooooooooo
-        //passar as somas de cada elemento Ai,j pra posição Ai,j na matriz 
-        //NULL?
+    for(register int i = 0; i < n; i++) {
         pthread_join(thread_processamento[i], NULL);
     }
 }
 
-void* gravar_D_ler_C() {
+void* gravar_D_ler_C(int T, char* arqC, char* arqD, int* matrizD) {
 
     parametros_escrita[0].tam_matriz = T;
     parametros_escrita[0].nome_arquivo = arqD;
@@ -222,13 +228,13 @@ void* gravar_D_ler_C() {
 
 }
 
-void* multiplicar_C_D() {
+void* multiplicar_C_D(/*colocar os args*/) {
     //cagadoooooo tudo cagado
     void *matrizE = aloca_matriz(T, T);
     matrizE = multiplica_matrizes(matrizC, matrizD, T);
 }
 
-void* gravar_e_reduzir_E() {
+void* gravar_e_reduzir_E(int qntd_por_thread, int T, char *arqE, int* matrizE) {
     //nao ta simultaneo essa bostaaaaaaaaaaaaa
     //gravar_matriz(T, arqE, matrizE);
     parametros_escrita[1].tam_matriz = T;
@@ -283,6 +289,12 @@ int main(int argc, char *argv[]) {
     char *arqE = argv[7];
 
     int qntd_por_thread = T/n;
+
+    //acho que esse aviso não é necessario
+    if(qntd_por_thread % n != 0) {
+        printf("A matriz não é divisível pela quantidade de threads.");
+        return 0;
+    }
 
     int *matrizA = aloca_matriz(T, T);
     int *matrizB = aloca_matriz(T, T);
