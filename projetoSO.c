@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include "projetoSO.h"
+//colocar /n nas coisas
+//O ARQUIVO D TA COM A LINHA 100 ZERADA
 
 #define posicao(I, J, COLUNAS) ((I)*(COLUNAS) + (J))
 
@@ -27,7 +29,7 @@ FILE *abrir_arquivo(char* nome_arq, char* modo) {
 
     if (arq == NULL) {
         printf ("Não foi possível abrir o arquivo.\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     return arq;
 }
@@ -75,8 +77,8 @@ void gerar_matriz(register int tamanho, char *nome_arq) {
     if(tamanho == 100 || tamanho == 1000) {
         arq_matriz = abrir_arquivo(nome_arq, "w");
 
-        for(i = 0; i < 100; i++) {
-            for(j = 0; j < 100; j++) {
+        for(i = 0; i < tamanho; i++) {
+            for(j = 0; j < tamanho; j++) {
                 fprintf(arq_matriz, "%d ", 1);
             }
 
@@ -86,8 +88,8 @@ void gerar_matriz(register int tamanho, char *nome_arq) {
         fclose(arq_matriz);
     } 
     else {
-        printf("O tamanho inserido para a matriz não pode ser gerado.");
-        exit(1);
+        printf("O tamanho inserido para a matriz não pode ser gerado.\n");
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -137,6 +139,7 @@ void* gravar_matriz(void *args) {
     }
 
     fclose(arq_matriz);
+    return NULL;
 }
 
 void *soma_matrizes(void* args) {
@@ -157,9 +160,7 @@ void *soma_matrizes(void* args) {
         }
     }
 
-    //return ((void*) matriz_soma);
-    return NULL 
-    //pthread exit?
+    return ((void*) matriz_soma);
 }
 
 void *multiplica_matrizes(void *args) {
@@ -177,13 +178,13 @@ void *multiplica_matrizes(void *args) {
     for(i = 0; i < tamanho; i++) {
         for(j = 0; j < tamanho; j++) {
             matriz_mult[posicao(i, j, tamanho)] = 0;
-            for(register int a = 0; a < x: a++) {
+            for(register int a = 0; a < tamanho; a++) {
                 matriz_mult[posicao(i, j, tamanho)] += matriz_1[posicao(i, a, tamanho)] * matriz_2[posicao(a, j, tamanho)];
             }
         }
     }
 
-    return NULL
+    return NULL;
     //return ((void*) matriz_mult);
 }
 
@@ -195,11 +196,6 @@ void *reduz_matriz(void* args) {
     inicio = ((parametros_thread*)args)->indice_inicio;
     final = ((parametros_thread*)args)->indice_final;
     matriz = ((parametros_thread*)args)->matriz_final;
-
-    if ((soma = (int *) malloc(sizeof(int))) == NULL) {
-        puts("Não foi possível alocar o vetor.");
-        exit(EXIT_FAILURE);
-    }
     
     *reducao_parcial = 0;
 
@@ -209,12 +205,12 @@ void *reduz_matriz(void* args) {
         }
     }
 
-    return ((void*) valor_reducao);
+    return ((void*) reducao_parcial);
 
 }
 
 //passos
-void* leitura_A_B(int T, char *arqA, char* arqB, int* matrizA, int* matrizB) {
+void* leitura_A_B(int T, char *arqA, char* arqB, int** matrizA, int** matrizB) {
 
     pthread_t thread_leitura[2];
     parametros_thread *parametros_leitura = aloca_vetor_parametros(2);
@@ -224,18 +220,26 @@ void* leitura_A_B(int T, char *arqA, char* arqB, int* matrizA, int* matrizB) {
     parametros_leitura[1].tam_matriz = T;
     parametros_leitura[1].nome_arquivo = arqB;
 
-    pthread_create(&thread_leitura[0], NULL, leitura_matriz, (void*)&parametros_leitura[0]);
-    pthread_create(&thread_leitura[1], NULL, leitura_matriz, (void*)&parametros_leitura[1]);
+    int err;
 
-    pthread_join(thread_leitura[1], (void**)&matrizA);
-    pthread_join(thread_leitura[0], (void**)&matrizB);
+    err = pthread_create(&thread_leitura[0], NULL, leitura_matriz, (void*)&parametros_leitura[0]);
+    verificar_criacao_thrd(err);
+    err = pthread_create(&thread_leitura[1], NULL, leitura_matriz, (void*)&parametros_leitura[1]);
+    verificar_criacao_thrd(err);
+
+    void *matriz_lida;
+    err = pthread_join(thread_leitura[1], &matriz_lida);
+    verificar_juncao_thrd(err);
+    *matrizA = (int*)matriz_lida;
+
+    err = pthread_join(thread_leitura[0], &matriz_lida);
+    verificar_juncao_thrd(err);
+    *matrizB = (int*) matriz_lida;
 
     free(parametros_leitura);
-    pthread_exit(NULL);
-
 }
 
-void* soma_A_B(int qntd_thrds, int T, int* matrizA, int* matrizB, int* matrizD) {
+void* soma_A_B(int qntd_thrds, int T, int* matrizA, int* matrizB, int** matrizD) {
     register int i, qntd_por_thread;
     int err;
 
@@ -243,30 +247,29 @@ void* soma_A_B(int qntd_thrds, int T, int* matrizA, int* matrizB, int* matrizD) 
     parametros_thread *parametros_processamento = aloca_vetor_parametros(qntd_thrds);
 
     verificar_qntd_thrds(T, qntd_thrds);
-    int qntd_por_thread = T/qntd_thrds;
+    qntd_por_thread = T/qntd_thrds;
 
-    for(register int i = 0; i < n; i++) {
+    for(i = 0; i < qntd_thrds; i++) {
         parametros_processamento[i].indice_inicio = qntd_por_thread * i;
         parametros_processamento[i].indice_final = (qntd_por_thread * (i+1)) - 1;
         parametros_processamento[i].tam_matriz = T;
         parametros_processamento[i].matriz_1 = matrizA;
         parametros_processamento[i].matriz_2 = matrizB;
-        parametros_processamento[i].matriz_final = matrizD;
+        parametros_processamento[i].matriz_final = *matrizD;
         
         err = pthread_create(&thread_processamento[i], NULL, soma_matrizes, (void*) &parametros_processamento[i]);
         verificar_criacao_thrd(err);
     }
 
-    for(register int i = 0; i < n; i++) {
+    for(i = 0; i < qntd_thrds; i++) {
         err = pthread_join(thread_processamento[i], NULL);
         verificar_juncao_thrd(err);
     }
 
     free(parametros_processamento);
-    pthread_exit(NULL);
 }
 
-void* gravar_D_ler_C(int T, char* arqC, char* arqD, int *matrizC, int* matrizD) {
+void* gravar_D_ler_C(int T, char* arqC, char* arqD, int **matrizC, int* matrizD) {
     pthread_t thread_escrita;
     parametros_thread parametros_escrita;
     
@@ -279,16 +282,20 @@ void* gravar_D_ler_C(int T, char* arqC, char* arqD, int *matrizC, int* matrizD) 
 
     parametros_leitura.tam_matriz = T;
     parametros_leitura.nome_arquivo = arqC;
-    //matriz_final = matrizC?
-    //e dai retorna NULL?
 
-    pthread_create(&thread_escrita, NULL, gravar_matriz, (void*)&parametros_escrita);
-    pthread_create(&thread_leitura, NULL, leitura_matriz, (void*)&parametros_leitura);
+    int err;
 
-    pthread_join(thread_leitura, (void**)&matrizC);
-    pthread_join(thread_escrita, NULL);
+    err = pthread_create(&thread_escrita, NULL, gravar_matriz, (void*)&parametros_escrita);
+    verificar_criacao_thrd(err);
 
-    pthread_exit(NULL);
+    err = pthread_create(&thread_leitura, NULL, leitura_matriz, (void*)&parametros_leitura);
+    verificar_criacao_thrd(err);
+
+    err = pthread_join(thread_leitura, NULL);
+    verificar_juncao_thrd(err);
+
+    err = pthread_join(thread_escrita, NULL);
+    verificar_juncao_thrd(err);
 }
 
 void* multiplicar_D_C(int qntd_thrds, int T, int* matrizC, int* matrizD, int* matrizE) {
@@ -300,7 +307,7 @@ void* multiplicar_D_C(int qntd_thrds, int T, int* matrizC, int* matrizD, int* ma
 
     qntd_por_thread = T/qntd_thrds;
 
-        for(i = 0; i < n; i++) {
+        for(i = 0; i < qntd_thrds; i++) {
         parametros_processamento[i].indice_inicio = qntd_por_thread * i;
         parametros_processamento[i].indice_final = (qntd_por_thread * (i+1)) - 1;
         parametros_processamento[i].tam_matriz = T;
@@ -312,13 +319,12 @@ void* multiplicar_D_C(int qntd_thrds, int T, int* matrizC, int* matrizD, int* ma
         verificar_criacao_thrd(err);
     }
 
-    for(i = 0; i < n; i++) {
+    for(i = 0; i < qntd_thrds; i++) {
         err = pthread_join(thread_processamento[i], NULL);
         verificar_juncao_thrd(err);
     }
 
     free(parametros_processamento);
-    pthread_exit(NULL);
 }
 
 int gravar_e_reduzir_E(int qntd_thrds, int T, char *arqE, int* matrizE) {
@@ -331,10 +337,6 @@ int gravar_e_reduzir_E(int qntd_thrds, int T, char *arqE, int* matrizE) {
     parametros_escrita.nome_arquivo = arqE;
     parametros_escrita.matriz_final = matrizE;
 
-    //como gravação e reduçao vao ser simultaneos?
-    pthread_create(&thread_escrita, NULL, gravar_matriz, (void*)&parametros_escrita);
-    pthread_join(thread_escrita, NULL);
-
     pthread_t thread_processamento[qntd_thrds];
     parametros_thread *parametros_processamento = aloca_vetor_parametros(qntd_thrds);
 
@@ -344,8 +346,11 @@ int gravar_e_reduzir_E(int qntd_thrds, int T, char *arqE, int* matrizE) {
     void* soma = NULL;
     int soma_total = 0;
     int err;
+    
+    err = pthread_create(&thread_escrita, NULL, gravar_matriz, (void*)&parametros_escrita);
+    verificar_criacao_thrd(err);
 
-    for(i = 0; i < n; i++) {
+    for(i = 0; i < qntd_thrds; i++) {
         parametros_processamento[i].indice_inicio = qntd_por_thread * i;
         parametros_processamento[i].indice_final = (qntd_por_thread * (i+1)) - 1;
         parametros_processamento[i].matriz_final = matrizE;
@@ -354,28 +359,18 @@ int gravar_e_reduzir_E(int qntd_thrds, int T, char *arqE, int* matrizE) {
         verificar_criacao_thrd(err);
     }
 
-    for(i = 0; i < n; i++) {
+    for(i = 0; i < qntd_thrds; i++) {
         err = pthread_join(thread_processamento[i], &soma);
         verificar_juncao_thrd(err);
         soma_total += *((int *) soma);
         free(soma);
     }
 
-    free(parametros_escrita);
+    err = pthread_join(thread_escrita, NULL);
+    verificar_juncao_thrd(err);
+
     free(parametros_processamento);
     return soma_total;
-}
-
-clock_t calculo_tempo(void (*funcao)(void*)) {
-
-    clock_t inicio, fim;
-    double tempo;
-    inicio = clock();
-    (*funcao)(NULL);
-    fim = clock() - inicio;
-    tempo = ((double) fim)/CLOCKS_PER_SEC;
- 
-    return tempo;
 }
 
 int main(int argc, char *argv[]) {
@@ -399,12 +394,34 @@ int main(int argc, char *argv[]) {
     gerar_matriz(T, arqB);
     gerar_matriz(T, arqC);
 
-/* *******************************IMPRESSÃO******************************** */
-    printf("Redução: \n");
-    printf("Tempo soma: \n");
-    printf("Tempo multiplicação: \n");
-    printf("Tempo redução: \n");
-    printf("Tempo total: \n");
+    clock_t inicio, fim;
+    double tempo_soma, tempo_mult, tempo_red;
+
+    leitura_A_B(T, arqA, arqB, &matrizA, &matrizB);
+
+    inicio = clock();
+    soma_A_B(n, T, matrizA, matrizB, &matrizD);
+    fim = clock() - inicio;
+    tempo_soma = ((double) fim) / CLOCKS_PER_SEC;
+
+    gravar_D_ler_C(T, arqC, arqD, &matrizC, matrizD);
+
+    inicio = clock();
+    multiplicar_D_C(n, T, matrizA, matrizD, matrizE);
+    fim = clock() - inicio;
+    tempo_mult = ((double) fim) / CLOCKS_PER_SEC;
+
+    int *resultado_red;
+    inicio = clock();
+    resultado_red = (n, T, arqE, matrizE);
+    fim = clock() - inicio;
+    tempo_red = ((double) fim) / CLOCKS_PER_SEC;
+
+    printf("Redução: %d\n", *resultado_red);
+    printf("Tempo soma: %f segundos.\n", tempo_soma);
+    printf("Tempo multiplicação: %f segundos.\n", tempo_mult);
+    printf("Tempo redução: %f segundos.\n", tempo_red);
+    printf("Tempo total: %f segundos.\n", tempo_soma + tempo_mult + tempo_red);
 
     free(matrizA);
     free(matrizB);
