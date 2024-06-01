@@ -213,7 +213,7 @@ void *reduz_matriz(void* args) {
 
 }
 
-//passos
+//passos para n != 1
 void* leitura_A_B(int T, char *arqA, char* arqB, int** matrizA, int** matrizB) {
 
     pthread_t thread_leitura[2];
@@ -295,14 +295,16 @@ void* gravar_D_ler_C(int T, char* arqC, char* arqD, int **matrizC, int* matrizD)
     err = pthread_create(&thread_leitura, NULL, leitura_matriz, (void*)&parametros_leitura);
     verificar_criacao_thrd(err);
 
-    err = pthread_join(thread_leitura, NULL);
+    void *matriz_lida;
+    err = pthread_join(thread_leitura, &matriz_lida);
     verificar_juncao_thrd(err);
+    *matrizC = (int*)matriz_lida;
 
     err = pthread_join(thread_escrita, NULL);
     verificar_juncao_thrd(err);
 }
 
-void* multiplicar_D_C(int qntd_thrds, int T, int* matrizC, int* matrizD, int** matrizE) {
+void* multiplicar_C_D(int qntd_thrds, int T, int* matrizC, int* matrizD, int** matrizE) {
     register int i, qntd_por_thread;
     int err;
 
@@ -315,8 +317,8 @@ void* multiplicar_D_C(int qntd_thrds, int T, int* matrizC, int* matrizD, int** m
         parametros_processamento[i].indice_inicio = qntd_por_thread * i;
         parametros_processamento[i].indice_final = (qntd_por_thread * (i+1)) - 1;
         parametros_processamento[i].tam_matriz = T;
-        parametros_processamento[i].matriz_1 = matrizD;
-        parametros_processamento[i].matriz_2 = matrizC;
+        parametros_processamento[i].matriz_1 = matrizC;
+        parametros_processamento[i].matriz_2 = matrizD;
         parametros_processamento[i].matriz_final = *matrizE;
         
         err = pthread_create(&thread_processamento[i], NULL, multiplica_matrizes, (void*) &parametros_processamento[i]);
@@ -367,9 +369,9 @@ int gravar_e_reduzir_E(int qntd_thrds, int T, char *arqE, int* matrizE) {
     for(i = 0; i < qntd_thrds; i++) {
         err = pthread_join(thread_processamento[i], &soma_parcial);
         verificar_juncao_thrd(err);
-        printf("Soma parcial do thread %d: %d\n", i, *((int *) soma_parcial));
+        //printf("Soma parcial do thread %d: %d\n", i, *((int *) soma_parcial));
         soma_total += *((int *) soma_parcial);
-        printf("Soma total: %lld.\n", soma_total);
+        //printf("Soma total: %lld.\n", soma_total);
         free(soma_parcial);
     }
 
@@ -378,6 +380,83 @@ int gravar_e_reduzir_E(int qntd_thrds, int T, char *arqE, int* matrizE) {
 
     free(parametros_processamento);
     return soma_total;
+}
+
+//passos para n = 1
+int* leitura_sem_threads(register int tamanho, char* nome_arq) {
+
+    FILE* arq_matriz = abrir_arquivo(nome_arq, "r");
+
+    int *matriz = aloca_matriz(tamanho, tamanho);
+
+    for(register int i = 0; i < tamanho; i++) {
+        for(register int j = 0; j < tamanho; j++) {
+            fscanf(arq_matriz, "%d", &matriz[posicao(i, j, tamanho)]);
+        }
+    }
+
+    fclose(arq_matriz);
+
+    return matriz;
+}
+
+void gravacao_sem_threads(int tamanho, char* nome_arq, int* matriz) {
+
+    FILE* arq_matriz = abrir_arquivo(nome_arq, "w");
+
+    register int i, j;
+    for(i = 0; i < tamanho; i++) {
+        for(j = 0; j < tamanho; j++) {
+            fprintf(arq_matriz, "%d ", matriz[posicao(i, j, tamanho)]);
+        }
+
+        fprintf(arq_matriz, "\n"); 
+    }
+
+    fclose(arq_matriz);
+}
+
+int* soma_sem_threads(int *matriz_1, int *matriz_2, register int tamanho) {
+
+    int *matriz_soma = aloca_matriz(tamanho, tamanho);
+
+    for(register int i = 0; i < tamanho; i++) {
+        for(register int j = 0; j < tamanho; j++) {
+            matriz_soma[posicao(i, j, tamanho)] = matriz_1[posicao(i, j, tamanho)] + matriz_2[posicao(i, j, tamanho)];
+        }
+    }
+
+    return matriz_soma;
+}
+
+int* mult_sem_threads(int *matriz_1, int *matriz_2, register int tamanho) {
+
+    int *matriz_mult = aloca_matriz(tamanho, tamanho);
+
+    for (register int i = 0; i < tamanho; i++) {
+        for (register int j = 0; j < tamanho; j++) {
+            matriz_mult[posicao(i, j, tamanho)] = 0;
+            for (register int k = 0; k < tamanho; k++) {
+                matriz_mult[posicao(i, j, tamanho)] += matriz_1[posicao(i, k, tamanho)] * matriz_2[posicao(k, j, tamanho)];
+            }
+        }
+    }
+
+    return matriz_mult;
+}
+
+int reducao_sem_threads(int *matriz, register int tamanho) {
+
+    int valor_reducao = 0;
+
+    for(register int i = 0; i < tamanho; i++) {
+        for(register int j = 0; j < tamanho; j++) {
+            valor_reducao += matriz[posicao(i, j, tamanho)];
+        }
+    }
+
+    return valor_reducao;
+
 }
 
 int main(int argc, char *argv[]) {
@@ -404,25 +483,53 @@ int main(int argc, char *argv[]) {
     clock_t inicio, fim;
     double tempo_soma, tempo_mult, tempo_red;
 
-    leitura_A_B(T, arqA, arqB, &matrizA, &matrizB);
-
-    inicio = clock();
-    soma_A_B(n, T, matrizA, matrizB, &matrizD);
-    fim = clock() - inicio;
-    tempo_soma = ((double) fim) / CLOCKS_PER_SEC;
-
-    gravar_D_ler_C(T, arqC, arqD, &matrizC, matrizD);
-
-    inicio = clock();
-    multiplicar_D_C(n, T, matrizA, matrizD, &matrizE);
-    fim = clock() - inicio;
-    tempo_mult = ((double) fim) / CLOCKS_PER_SEC;
-
     int reducao_resultado;
-    inicio = clock();
-    reducao_resultado = gravar_e_reduzir_E(n, T, arqE, matrizE);
-    fim = clock() - inicio;
-    tempo_red = ((double) fim) / CLOCKS_PER_SEC;
+
+    if(n == 1) {
+        matrizA = leitura_sem_threads(T, arqA);
+        matrizB = leitura_sem_threads(T, arqB);
+
+        inicio = clock();
+        matrizD = soma_sem_threads(matrizA, matrizB, T);
+        fim = clock() - inicio;
+        tempo_soma = ((double) fim) / CLOCKS_PER_SEC;
+
+        gravacao_sem_threads(T, arqD, matrizD);
+
+        matrizC =  leitura_sem_threads(T, arqC);
+
+        inicio = clock();
+        matrizE = mult_sem_threads(matrizC, matrizD, T);
+        fim = clock() - inicio;
+        tempo_mult = ((double) fim) / CLOCKS_PER_SEC;   
+
+        gravacao_sem_threads(T, arqE, matrizE);
+
+        inicio = clock();
+        reducao_resultado = reducao_sem_threads(matrizE, T);
+        fim = clock() - inicio;
+        tempo_red = ((double) fim) / CLOCKS_PER_SEC; 
+    
+    } else {
+        leitura_A_B(T, arqA, arqB, &matrizA, &matrizB);
+
+        inicio = clock();
+        soma_A_B(n, T, matrizA, matrizB, &matrizD);
+        fim = clock() - inicio;
+        tempo_soma = ((double) fim) / CLOCKS_PER_SEC;
+
+        gravar_D_ler_C(T, arqC, arqD, &matrizC, matrizD);
+
+        inicio = clock();
+        multiplicar_C_D(n, T, matrizA, matrizD, &matrizE);
+        fim = clock() - inicio;
+        tempo_mult = ((double) fim) / CLOCKS_PER_SEC;
+
+        inicio = clock();
+        reducao_resultado = gravar_e_reduzir_E(n, T, arqE, matrizE);
+        fim = clock() - inicio;
+        tempo_red = ((double) fim) / CLOCKS_PER_SEC;
+    }
 
     printf("Redução: %d\n", reducao_resultado);
     printf("Tempo soma: %f segundos.\n", tempo_soma);

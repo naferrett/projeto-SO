@@ -45,7 +45,7 @@ void* soma_A_B(int qntd_thrds, int T, int* matrizA, int* matrizB, int** matrizD)
 
 void* gravar_D_ler_C(int T, char* arqC, char* arqD, int **matrizC, int* matrizD);
 
-void* multiplicar_D_C(int qntd_thrds, int T, int* matrizC, int* matrizD, int** matrizE);
+void* multiplicar_C_D(int qntd_thrds, int T, int* matrizC, int* matrizD, int** matrizE);
 
 int gravar_e_reduzir_E(int qntd_thrds, int T, char *arqE, int* matrizE);
 
