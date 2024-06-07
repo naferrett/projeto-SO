@@ -369,7 +369,7 @@ int gravar_e_reduzir_E(int qntd_thrds, int T, char *arqE, int* matrizE) {
     for(i = 0; i < qntd_thrds; i++) {
         err = pthread_join(thread_processamento[i], &soma_parcial);
         verificar_juncao_thrd(err);
-        //printf("Soma parcial do thread %d: %d\n", i, *((int *) soma_parcial));
+        printf("Soma parcial do thread %d: %d\n", i, *((int *) soma_parcial));
         soma_total += *((int *) soma_parcial);
         //printf("Soma total: %lld.\n", soma_total);
         free(soma_parcial);
