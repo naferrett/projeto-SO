@@ -15,6 +15,33 @@ typedef struct {
     int *matriz_final;
 } parametros_thread;
 
+typedef struct {
+    int tamanho;
+    int qntd_thrds;
+    int *matrizA;
+    int *matrizB;
+    int *matrizC;
+    int *matrizD;
+    int *matrizE;
+    char *arqA;
+    char *arqB;
+    char *arqC;
+    char *arqD;
+    char *arqE;
+} parametros_de_exe;
+
+typedef struct {
+    double tempo_soma;
+    double tempo_mult;
+    double tempo_red;
+    int resultado_red;
+} resultado_e_tempo;
+
+typedef struct {
+    parametros_de_exe *args;
+    resultado_e_tempo *calculo;
+} parametros_thread_unica;
+
 parametros_thread *aloca_vetor_parametros(unsigned int tamanho);
 
 FILE *abrir_arquivo(char* nome_arq, char* modo);

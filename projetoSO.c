@@ -382,6 +382,29 @@ int gravar_e_reduzir_E(int qntd_thrds, int T, char *arqE, int* matrizE) {
     return soma_total;
 }
 
+void multiplas_thrds_exe(parametros_de_exe *args, resultado_e_tempo *calculo) {
+    clock_t inicio, fim;
+
+    leitura_A_B(args->tamanho, args->arqA, args->arqB, &args->matrizA, &args->matrizB);
+
+    inicio = clock();
+    soma_A_B(args->qntd_thrds, args->tamanho, args->matrizA, args->matrizB, &args->matrizD);
+    fim = clock() - inicio;
+    calculo->tempo_soma = ((double) fim) / CLOCKS_PER_SEC;
+
+    gravar_D_ler_C(args->tamanho, args->arqC, args->arqD, &args->matrizC, args->matrizD);
+
+    inicio = clock();
+    multiplicar_C_D(args->qntd_thrds, args->tamanho, args->matrizA, args->matrizD, &args->matrizE);
+    fim = clock() - inicio;
+    calculo->tempo_mult = ((double) fim) / CLOCKS_PER_SEC;
+
+    inicio = clock();
+    calculo->resultado_red = gravar_e_reduzir_E(args->qntd_thrds, args->tamanho, args->arqE, args->matrizE);
+    fim = clock() - inicio;
+    calculo->tempo_red = ((double) fim) / CLOCKS_PER_SEC;
+}
+
 //passos para n = 1
 int* leitura_sem_threads(register int tamanho, char* nome_arq) {
 
@@ -459,6 +482,39 @@ int reducao_sem_threads(int *matriz, register int tamanho) {
 
 }
 
+void* unica_thrd_exe(void *thrd_args) {
+    parametros_thread_unica *novo_args = (parametros_thread_unica*) thrd_args;
+    parametros_de_exe *args = novo_args->args;
+    resultado_e_tempo *calculo = novo_args->calculo;
+
+    clock_t inicio, fim;
+
+    args->matrizA = leitura_sem_threads(args->tamanho, args->arqA);
+    args->matrizB = leitura_sem_threads(args->tamanho, args->arqB);
+
+    inicio = clock();
+    args->matrizD = soma_sem_threads(args->matrizA, args->matrizB, args->tamanho);
+    fim = clock() - inicio;
+    calculo->tempo_soma = ((double) fim) / CLOCKS_PER_SEC;
+
+    gravacao_sem_threads(args->tamanho, args->arqD, args->matrizD);
+
+    args->matrizC =  leitura_sem_threads(args->tamanho, args->arqC);
+
+    inicio = clock();
+    args->matrizE = mult_sem_threads(args->matrizC, args->matrizD, args->tamanho);
+    fim = clock() - inicio;
+    calculo->tempo_mult = ((double) fim) / CLOCKS_PER_SEC;   
+
+    gravacao_sem_threads(args->tamanho, args->arqE, args->matrizE);
+
+    inicio = clock();
+    calculo->resultado_red = reducao_sem_threads(args->matrizE, args->tamanho);
+    fim = clock() - inicio;
+    calculo->tempo_red = ((double) fim) / CLOCKS_PER_SEC; 
+
+}
+
 int main(int argc, char *argv[]) {
 
     int n = atoi(argv[1]);
@@ -480,62 +536,47 @@ int main(int argc, char *argv[]) {
     gerar_matriz(T, arqB);
     gerar_matriz(T, arqC);
 
-    clock_t inicio, fim;
     double tempo_soma, tempo_mult, tempo_red;
-
     int reducao_resultado;
 
+    parametros_de_exe args;
+    args.tamanho = T;
+    args.qntd_thrds = n;
+    args.matrizA = matrizA;
+    args.matrizB = matrizB;
+    args.matrizC = matrizC;
+    args.matrizD = matrizD;
+    args.matrizE = matrizE;
+    args.arqA = arqA;
+    args.arqB = arqB;
+    args.arqC = arqC;
+    args.arqD = arqD;
+    args.arqE = arqE;
+
+    resultado_e_tempo calculo;
+    calculo.tempo_mult = tempo_mult;
+    calculo.tempo_red = tempo_red;
+    calculo.tempo_soma = tempo_soma;
+    calculo.resultado_red = reducao_resultado;
+
     if(n == 1) {
-        matrizA = leitura_sem_threads(T, arqA);
-        matrizB = leitura_sem_threads(T, arqB);
+        pthread_t thread;
+        parametros_thread_unica novo_args = {&args, &calculo};
 
-        inicio = clock();
-        matrizD = soma_sem_threads(matrizA, matrizB, T);
-        fim = clock() - inicio;
-        tempo_soma = ((double) fim) / CLOCKS_PER_SEC;
+        int err = pthread_create(&thread, NULL, unica_thrd_exe, (void*)&novo_args);
+        verificar_criacao_thrd(err);
 
-        gravacao_sem_threads(T, arqD, matrizD);
-
-        matrizC =  leitura_sem_threads(T, arqC);
-
-        inicio = clock();
-        matrizE = mult_sem_threads(matrizC, matrizD, T);
-        fim = clock() - inicio;
-        tempo_mult = ((double) fim) / CLOCKS_PER_SEC;   
-
-        gravacao_sem_threads(T, arqE, matrizE);
-
-        inicio = clock();
-        reducao_resultado = reducao_sem_threads(matrizE, T);
-        fim = clock() - inicio;
-        tempo_red = ((double) fim) / CLOCKS_PER_SEC; 
-    
+        err = pthread_join(thread, NULL);
+        verificar_juncao_thrd(err);
     } else {
-        leitura_A_B(T, arqA, arqB, &matrizA, &matrizB);
-
-        inicio = clock();
-        soma_A_B(n, T, matrizA, matrizB, &matrizD);
-        fim = clock() - inicio;
-        tempo_soma = ((double) fim) / CLOCKS_PER_SEC;
-
-        gravar_D_ler_C(T, arqC, arqD, &matrizC, matrizD);
-
-        inicio = clock();
-        multiplicar_C_D(n, T, matrizA, matrizD, &matrizE);
-        fim = clock() - inicio;
-        tempo_mult = ((double) fim) / CLOCKS_PER_SEC;
-
-        inicio = clock();
-        reducao_resultado = gravar_e_reduzir_E(n, T, arqE, matrizE);
-        fim = clock() - inicio;
-        tempo_red = ((double) fim) / CLOCKS_PER_SEC;
+        multiplas_thrds_exe(&args, &calculo);
     }
 
-    printf("Redução: %d\n", reducao_resultado);
-    printf("Tempo soma: %f segundos.\n", tempo_soma);
-    printf("Tempo multiplicação: %f segundos.\n", tempo_mult);
-    printf("Tempo redução: %f segundos.\n", tempo_red);
-    printf("Tempo total: %f segundos.\n", tempo_soma + tempo_mult + tempo_red);
+    printf("Redução: %d\n", calculo.resultado_red);
+    printf("Tempo soma: %f segundos.\n", calculo.tempo_soma);
+    printf("Tempo multiplicação: %f segundos.\n", calculo.tempo_mult);
+    printf("Tempo redução: %f segundos.\n", calculo.tempo_red);
+    printf("Tempo total: %f segundos.\n", calculo.tempo_soma + calculo.tempo_mult + calculo.tempo_red);
 
     free(matrizA);
     free(matrizB);

@@ -1,1 +1,6 @@
+./prog 1 100 arqA.dat arqB.dat arqC.dat arqD.dat arqE.dat
+./prog 2 100 arqA.dat arqB.dat arqC.dat arqD.dat arqE.dat
 ./prog 4 100 arqA.dat arqB.dat arqC.dat arqD.dat arqE.dat
+./prog 1 1000 arqA.dat arqB.dat arqC.dat arqD.dat arqE.dat
+./prog 2 1000 arqA.dat arqB.dat arqC.dat arqD.dat arqE.dat
+./prog 4 1000 arqA.dat arqB.dat arqC.dat arqD.dat arqE.dat
