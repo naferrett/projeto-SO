@@ -536,7 +536,8 @@ int main(int argc, char *argv[]) {
     gerar_matriz(T, arqB);
     gerar_matriz(T, arqC);
 
-    double tempo_soma, tempo_mult, tempo_red;
+    clock_t inicio, fim;
+    double tempo_soma, tempo_mult, tempo_red, tempo_total;
     int reducao_resultado;
 
     parametros_de_exe args;
@@ -560,6 +561,7 @@ int main(int argc, char *argv[]) {
     calculo.resultado_red = reducao_resultado;
 
     if(n == 1) {
+        inicio = clock();
         pthread_t thread;
         parametros_thread_unica novo_args = {&args, &calculo};
 
@@ -568,15 +570,20 @@ int main(int argc, char *argv[]) {
 
         err = pthread_join(thread, NULL);
         verificar_juncao_thrd(err);
+        fim = clock() - inicio;
+        tempo_total = ((double) fim) / CLOCKS_PER_SEC; 
     } else {
+        inicio = clock();
         multiplas_thrds_exe(&args, &calculo);
+        fim = clock() - inicio;
+        tempo_total = ((double) fim) / CLOCKS_PER_SEC; 
     }
 
     printf("Redução: %d\n", calculo.resultado_red);
     printf("Tempo soma: %f segundos.\n", calculo.tempo_soma);
     printf("Tempo multiplicação: %f segundos.\n", calculo.tempo_mult);
     printf("Tempo redução: %f segundos.\n", calculo.tempo_red);
-    printf("Tempo total: %f segundos.\n", calculo.tempo_soma + calculo.tempo_mult + calculo.tempo_red);
+    printf("Tempo total: %f segundos.\n", tempo_total);
 
     free(matrizA);
     free(matrizB);
