@@ -482,7 +482,7 @@ int reducao_sem_threads(int *matriz, register int tamanho) {
 
 }
 
-void* unica_thrd_exe(void *thrd_args) {
+void* passos_unica_thrd(void *thrd_args) {
     parametros_thread_unica *novo_args = (parametros_thread_unica*) thrd_args;
     parametros_de_exe *args = novo_args->args;
     resultado_e_tempo *calculo = novo_args->calculo;
@@ -513,6 +513,17 @@ void* unica_thrd_exe(void *thrd_args) {
     fim = clock() - inicio;
     calculo->tempo_red = ((double) fim) / CLOCKS_PER_SEC; 
 
+}
+
+void unica_thrd_exe(parametros_de_exe* args, resultado_e_tempo* calculo) {
+    pthread_t thread;
+    parametros_thread_unica novo_args = {args, calculo};
+
+    int err = pthread_create(&thread, NULL, passos_unica_thrd, (void*)&novo_args);
+    verificar_criacao_thrd(err);
+
+    err = pthread_join(thread, NULL);
+    verificar_juncao_thrd(err);
 }
 
 int main(int argc, char *argv[]) {
@@ -562,14 +573,7 @@ int main(int argc, char *argv[]) {
 
     if(n == 1) {
         inicio = clock();
-        pthread_t thread;
-        parametros_thread_unica novo_args = {&args, &calculo};
-
-        int err = pthread_create(&thread, NULL, unica_thrd_exe, (void*)&novo_args);
-        verificar_criacao_thrd(err);
-
-        err = pthread_join(thread, NULL);
-        verificar_juncao_thrd(err);
+        unica_thrd_exe(&args, &calculo);
         fim = clock() - inicio;
         tempo_total = ((double) fim) / CLOCKS_PER_SEC; 
     } else {
