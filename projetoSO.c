@@ -1,8 +1,4 @@
 #include "funcs.h"
-//colocar /n nas coisas
-//tem que testar com numeros diferentes nas matrizes...
-
-#define posicao(I, J, COLUNAS) ((I)*(COLUNAS) + (J))
 
 parametros_thread *aloca_vetor_parametros(unsigned int tamanho) {
 
