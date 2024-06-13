@@ -37,12 +37,13 @@ git clone https://github.com/naferrett/projeto-SO.git
 
 Para usar o projeto, siga estas etapas:
 
-1. Compile o projeto com o comando
+1. Compile o projeto com o comando abaixo ou com o comando "make" para compilar com o Makefile
 ```
 gcc -pthread projetoSO.c -o prog
 ```
 
 2. Depois de compilado, execute o projeto com qualquer uma das 6 linhas de comando abaixo, considerando o tamanho da matriz e a quantidade de threads
+
 Para testar a execução com uma matriz 100x100 com uma thread:
 ```
 ./prog 1 100 arqA.dat arqB.dat arqC.dat arqD.dat arqE.dat
@@ -67,6 +68,10 @@ Para testar a execução com uma matriz 1000x1000 com quatro threads:
 ```
 ./prog 4 1000 arqA.dat arqB.dat arqC.dat arqD.dat arqE.dat
 ```
+
+## Relatório do projeto
+
+Para visualizar o relatório contendo a descrição do projeto, instruções para compilação, gráficos e análise dos resultados com a conclusão do experimento, acesse:
 
 ## 📝 Orientação
 

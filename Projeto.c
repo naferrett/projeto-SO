@@ -111,8 +111,7 @@ void* leitura_matriz(void *args) {
 }
 
 void* gravar_matriz(void *args) {
-
-    int tamanho;
+    register int tamanho;
     char* nome_arq;
     int* matriz;
 
@@ -137,8 +136,8 @@ void* gravar_matriz(void *args) {
 
 void *soma_matrizes(void* args) {
 
-    register int i, j, inicio, final;
-    int *matriz_1, *matriz_2, *matriz_soma, tamanho;
+    register int i, j, inicio, final, tamanho;
+    int *matriz_1, *matriz_2, *matriz_soma;
 
     inicio = ((parametros_thread*)args)->indice_inicio;
     final = ((parametros_thread*)args)->indice_final;
@@ -158,8 +157,8 @@ void *soma_matrizes(void* args) {
 
 void *multiplica_matrizes(void *args) {
 
-    register int i, j, inicio, final;
-    int *matriz_1, *matriz_2, *matriz_mult, tamanho;
+    register int i, j, inicio, final, tamanho;
+    int *matriz_1, *matriz_2, *matriz_mult;
 
     inicio = ((parametros_thread*)args)->indice_inicio;
     final = ((parametros_thread*)args)->indice_final;
@@ -365,9 +364,7 @@ int gravar_e_reduzir_E(int qntd_thrds, int T, char *arqE, int* matrizE) {
     for(i = 0; i < qntd_thrds; i++) {
         err = pthread_join(thread_processamento[i], &soma_parcial);
         verificar_juncao_thrd(err);
-        printf("Soma parcial do thread %d: %d\n", i, *((int *) soma_parcial));
         soma_total += *((int *) soma_parcial);
-        //printf("Soma total: %lld.\n", soma_total);
         free(soma_parcial);
     }
 
@@ -478,7 +475,7 @@ int reducao_sem_threads(int *matriz, register int tamanho) {
 
 }
 
-void* passos_unica_thrd(void *thrd_args) {
+void* unica_thrd_exe(void *thrd_args) {
     parametros_thread_unica *novo_args = (parametros_thread_unica*) thrd_args;
     parametros_de_exe *args = novo_args->args;
     resultado_e_tempo *calculo = novo_args->calculo;
@@ -508,18 +505,6 @@ void* passos_unica_thrd(void *thrd_args) {
     calculo->resultado_red = reducao_sem_threads(args->matrizE, args->tamanho);
     fim = clock() - inicio;
     calculo->tempo_red = ((double) fim) / CLOCKS_PER_SEC; 
-
-}
-
-void unica_thrd_exe(parametros_de_exe* args, resultado_e_tempo* calculo) {
-    pthread_t thread;
-    parametros_thread_unica novo_args = {args, calculo};
-
-    int err = pthread_create(&thread, NULL, passos_unica_thrd, (void*)&novo_args);
-    verificar_criacao_thrd(err);
-
-    err = pthread_join(thread, NULL);
-    verificar_juncao_thrd(err);
 }
 
 int main(int argc, char *argv[]) {
@@ -543,8 +528,7 @@ int main(int argc, char *argv[]) {
     gerar_matriz(T, arqB);
     gerar_matriz(T, arqC);
 
-    clock_t inicio, fim;
-    double tempo_soma, tempo_mult, tempo_red, tempo_total;
+    double tempo_soma, tempo_mult, tempo_red;
     int reducao_resultado;
 
     parametros_de_exe args;
@@ -568,22 +552,17 @@ int main(int argc, char *argv[]) {
     calculo.resultado_red = reducao_resultado;
 
     if(n == 1) {
-        inicio = clock();
-        unica_thrd_exe(&args, &calculo);
-        fim = clock() - inicio;
-        tempo_total = ((double) fim) / CLOCKS_PER_SEC; 
+        parametros_thread_unica novo_args = {&args, &calculo};
+        unica_thrd_exe(&novo_args);
     } else {
-        inicio = clock();
         multiplas_thrds_exe(&args, &calculo);
-        fim = clock() - inicio;
-        tempo_total = ((double) fim) / CLOCKS_PER_SEC; 
     }
 
     printf("Redução: %d\n", calculo.resultado_red);
     printf("Tempo soma: %f segundos.\n", calculo.tempo_soma);
     printf("Tempo multiplicação: %f segundos.\n", calculo.tempo_mult);
     printf("Tempo redução: %f segundos.\n", calculo.tempo_red);
-    printf("Tempo total: %f segundos.\n", tempo_total);
+    printf("Tempo total: %f segundos.\n", calculo.tempo_soma + calculo.tempo_mult + calculo.tempo_red);
 
     free(matrizA);
     free(matrizB);

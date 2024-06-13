@@ -90,8 +90,6 @@ int *mult_sem_threads(int *matriz_1, int *matriz_2, register int tamanho);
 
 int reducao_sem_threads(int *matriz, register int tamanho);
 
-void *passos_unica_thrd(void *thrd_args);
-
-void unica_thrd_exe(parametros_de_exe* args, resultado_e_tempo* calculo);
+void* unica_thrd_exe(void *thrd_args);
 
 #endif
