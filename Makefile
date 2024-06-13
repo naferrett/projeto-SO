@@ -1,12 +1,12 @@
 CC = gcc
 CFLAGS = -pthread
 SRC = Projeto.c
-EXE = prog
+TARGET = prog
 
 all: $(EXE)
 
-$(EXE): $(SRC)
-	$(CC) $(CFLAGS) -o $(EXE) $(SRC)
+$(TARGET): $(SRC)
+	$(CC) $(CFLAGS) $(SRC) -o $(TARGET)
 
 clean:
-	rm -f $(EXE)
+	rm -f $(TARGET)
