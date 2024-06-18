@@ -39,11 +39,6 @@ typedef struct {
     int resultado_red;
 } resultado_e_tempo;
 
-typedef struct {
-    parametros_de_exe *args;
-    resultado_e_tempo *calculo;
-} parametros_thread_unica;
-
 parametros_thread *aloca_vetor_parametros(unsigned int tamanho);
 
 FILE *abrir_arquivo(char* nome_arq, char* modo);
@@ -76,7 +71,7 @@ void *gravar_D_ler_C(int T, char* arqC, char* arqD, int **matrizC, int* matrizD)
 
 void *multiplicar_C_D(int qntd_thrds, int T, int* matrizC, int* matrizD, int** matrizE);
 
-int gravar_e_reduzir_E(int qntd_thrds, int T, char *arqE, int* matrizE);
+int gravar_e_reduzir_E(int qntd_thrds, int T, char *arqE, int* matrizE, double* tempo_total);
 
 void multiplas_thrds_exe(parametros_de_exe *args, resultado_e_tempo *calculo);
 
@@ -90,6 +85,6 @@ int *mult_sem_threads(int *matriz_1, int *matriz_2, register int tamanho);
 
 int reducao_sem_threads(int *matriz, register int tamanho);
 
-void* unica_thrd_exe(void *thrd_args);
+void* unica_thrd_exe(parametros_de_exe *args, resultado_e_tempo *calculo);
 
 #endif

@@ -3,7 +3,7 @@ CFLAGS = -pthread
 SRC = Projeto.c
 TARGET = prog
 
-all: $(EXE)
+all: $(TARGET)
 
 $(TARGET): $(SRC)
 	$(CC) $(CFLAGS) $(SRC) -o $(TARGET)
