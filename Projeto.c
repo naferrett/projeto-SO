@@ -94,7 +94,6 @@ void* leitura_matriz(void *args) {
     tamanho = ((parametros_thread *) args)->tam_matriz;
     nome_arq = ((parametros_thread *) args)->nome_arquivo;
 
-
     FILE* arq_matriz = abrir_arquivo(nome_arq, "r");
 
     int *matriz = aloca_matriz(tamanho, tamanho);
@@ -106,7 +105,6 @@ void* leitura_matriz(void *args) {
     }
 
     fclose(arq_matriz);
-
     return ((void*) matriz);
 }
 
@@ -188,7 +186,6 @@ void *reduz_matriz(void* args) {
     final = ((parametros_thread*)args)->indice_final;
     tamanho = ((parametros_thread*)args)->tam_matriz;
     matriz = ((parametros_thread*)args)->matriz_final;
-    
 
     if ((reducao_parcial = (int*)malloc(sizeof(int))) == NULL) {
         fprintf(stderr, "Não foi possível alocar memória para a redução parcial.\n");
@@ -304,6 +301,7 @@ void* multiplicar_C_D(int qntd_thrds, int T, int* matrizC, int* matrizD, int** m
     pthread_t thread_processamento[qntd_thrds];
     parametros_thread *parametros_processamento = aloca_vetor_parametros(qntd_thrds);
 
+    verificar_qntd_thrds(T, qntd_thrds);
     qntd_por_thread = T/qntd_thrds;
 
         for(i = 0; i < qntd_thrds; i++) {
@@ -394,9 +392,7 @@ void multiplas_thrds_exe(parametros_de_exe *args, resultado_e_tempo *calculo) {
     fim = clock() - inicio;
     calculo->tempo_mult = ((double) fim) / CLOCKS_PER_SEC;
 
-    inicio = clock();
     calculo->resultado_red = gravar_e_reduzir_E(args->qntd_thrds, args->tamanho, args->arqE, args->matrizE, &calculo->tempo_red);
-    fim = clock() - inicio;
 }
 
 //passos para n = 1
@@ -413,7 +409,6 @@ int* leitura_sem_threads(register int tamanho, char* nome_arq) {
     }
 
     fclose(arq_matriz);
-
     return matriz;
 }
 
