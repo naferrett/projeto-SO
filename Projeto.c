@@ -327,7 +327,9 @@ void* multiplicar_C_D(int qntd_thrds, int T, int* matrizC, int* matrizD, int** m
 }
 
 int gravar_e_reduzir_E(int qntd_thrds, int T, char *arqE, int* matrizE, double* tempo_total) {
-    register int i, qntd_por_thread;
+    register int i, qntd_por_thread, err;
+    void* soma_parcial = NULL;
+    long long int soma_total = 0;
 
     pthread_t thread_escrita;
     parametros_thread parametros_escrita;
@@ -335,22 +337,18 @@ int gravar_e_reduzir_E(int qntd_thrds, int T, char *arqE, int* matrizE, double* 
     parametros_escrita.tam_matriz = T;
     parametros_escrita.nome_arquivo = arqE;
     parametros_escrita.matriz_final = matrizE;
-
-    pthread_t thread_processamento[qntd_thrds];
-    parametros_thread *parametros_processamento = aloca_vetor_parametros(qntd_thrds);
-
-    verificar_qntd_thrds(T, qntd_thrds);
-    qntd_por_thread = T/qntd_thrds;
-
-    void* soma_parcial = NULL;
-    long long int soma_total = 0;
-    int err;
     
     err = pthread_create(&thread_escrita, NULL, gravar_matriz, (void*)&parametros_escrita);
     verificar_criacao_thrd(err);
 
     double inicio, fim;
     inicio = clock();
+
+    pthread_t thread_processamento[qntd_thrds];
+    parametros_thread *parametros_processamento = aloca_vetor_parametros(qntd_thrds);
+
+    verificar_qntd_thrds(T, qntd_thrds);
+    qntd_por_thread = T/qntd_thrds;
 
     for(i = 0; i < qntd_thrds; i++) {
         parametros_processamento[i].indice_inicio = qntd_por_thread * i;
