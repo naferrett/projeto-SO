@@ -1,7 +1,7 @@
 #include "funcs.h"
 
+//Faz a alocação de memória para os vetores contendo os parâmetros de execução das threads
 parametros_thread *aloca_vetor_parametros(unsigned int tamanho) {
-
     parametros_thread *vetor;
 
     if (tamanho <= 0)
@@ -17,6 +17,7 @@ parametros_thread *aloca_vetor_parametros(unsigned int tamanho) {
     return vetor;
 }
 
+//Realiza a abertura do arquivo no modo indicado
 FILE *abrir_arquivo(char* nome_arq, char* modo) {
     FILE *arq = fopen(nome_arq, modo);
 
@@ -27,6 +28,7 @@ FILE *abrir_arquivo(char* nome_arq, char* modo) {
     return arq;
 }
 
+//Faz a alocação dinâmica da matriz em uma única etapa
 int *aloca_matriz(int linhas, int colunas) {
     int *matriz = (int *) malloc(linhas * colunas * sizeof(int));
 
@@ -38,6 +40,7 @@ int *aloca_matriz(int linhas, int colunas) {
     return matriz;
 }
 
+//Verifica se o tamanho da matriz recebido é dividível pela quantidade de threads
 void verificar_qntd_thrds(int tamanho, int qntd_thrds) {
 
     if(tamanho % qntd_thrds != 0) {
@@ -46,6 +49,7 @@ void verificar_qntd_thrds(int tamanho, int qntd_thrds) {
     }
 }
 
+//Verifica se a criação da thread foi bem-sucedida
 void verificar_criacao_thrd(int thread) {
     if (thread != 0) {
         printf("Erro na criação das threads. Tente novamente.\n");
@@ -54,6 +58,7 @@ void verificar_criacao_thrd(int thread) {
 
 }
 
+//Verifica se a junção da thread foi bem-sucedida
 void verificar_juncao_thrd(int thread) {
     if (thread != 0) {
         printf("Erro na junção das threads. Tente novamente.\n");
@@ -61,6 +66,8 @@ void verificar_juncao_thrd(int thread) {
     }
 }
 
+//Gera automaticamente arquivos para as matrizes de entrada com o tamanho especificado, preenchidas inteiramente com números 1
+//Visto que apenas é necessária caso ainda não haja arquivos de entrada prontos, não é obrigatória para a execução, podendo ter sua chamada retirada do código
 void gerar_matriz(register int tamanho, char *nome_arq) {
 
     FILE *arq_matriz;
@@ -86,6 +93,7 @@ void gerar_matriz(register int tamanho, char *nome_arq) {
     }
 }
 
+//Realiza a leitura da matriz contida no arquivo e retorna a matriz em uma variável. Essa função é usada por uma thread.
 void* leitura_matriz(void *args) {
 
     register int tamanho;
@@ -108,6 +116,7 @@ void* leitura_matriz(void *args) {
     return ((void*) matriz);
 }
 
+//Grava cada elemento da matriz em um arquivo de texto no formato de matriz, respeitando as linhas e colunas dos elementos. Essa função é usada por uma thread.
 void* gravar_matriz(void *args) {
     register int tamanho;
     char* nome_arq;
@@ -132,6 +141,7 @@ void* gravar_matriz(void *args) {
     return NULL;
 }
 
+//Recebe duas matrizes, realiza a soma entre elas e retorna o resultado em uma variável de matriz. Essa função é usada por uma thread.
 void *soma_matrizes(void* args) {
 
     register int i, j, inicio, final, tamanho;
@@ -153,6 +163,7 @@ void *soma_matrizes(void* args) {
     return ((void*) matriz_soma);
 }
 
+//Recebe duas matrizes, realiza a multiplicação entre elas e retorna o resultado em uma variável de matriz. Essa função é usada por uma thread.
 void *multiplica_matrizes(void *args) {
 
     register int i, j, inicio, final, tamanho;
@@ -177,6 +188,7 @@ void *multiplica_matrizes(void *args) {
     return ((void*) matriz_mult);
 }
 
+//Recebe uma matriz, soma todos os seus elementos e retorna essa soma em uma variável de redução. Essa função é usada por uma thread.
 void *reduz_matriz(void* args) {
 
     register int i, j, inicio, final, tamanho;
@@ -203,7 +215,8 @@ void *reduz_matriz(void* args) {
     return ((void*) reducao_parcial);
 }
 
-//passos para n != 1
+//Inicio da execução com múltiplas threads
+//Cria e realiza a junção de duas threads de leitura para realizar a leitura dos arquivos que contêm as matrizes A e B
 void* leitura_A_B(int T, char *arqA, char* arqB, int** matrizA, int** matrizB) {
 
     pthread_t thread_leitura[2];
@@ -221,6 +234,7 @@ void* leitura_A_B(int T, char *arqA, char* arqB, int** matrizA, int** matrizB) {
     err = pthread_create(&thread_leitura[1], NULL, leitura_matriz, (void*)&parametros_leitura[1]);
     verificar_criacao_thrd(err);
 
+    //É criada a variável "matriz_lida" para obter o valor de retorno da execução da thread, que é um ponteiro do tipo void
     void *matriz_lida;
     err = pthread_join(thread_leitura[1], &matriz_lida);
     verificar_juncao_thrd(err);
@@ -233,6 +247,7 @@ void* leitura_A_B(int T, char *arqA, char* arqB, int** matrizA, int** matrizB) {
     free(parametros_leitura);
 }
 
+//Cria e realiza a junção de n threads de processamento para realizar a soma das matrizes A e B, resultando na matriz D 
 void* soma_A_B(int qntd_thrds, int T, int* matrizA, int* matrizB, int** matrizD) {
     register int i, qntd_por_thread;
     int err;
@@ -263,6 +278,7 @@ void* soma_A_B(int qntd_thrds, int T, int* matrizA, int* matrizB, int** matrizD)
     free(parametros_processamento);
 }
 
+//Cria e realiza a junção de uma thread de leitura e uma thread de escrita para realizar a leitura do arquivo contendo a matriz C e gravar a matriz D em arquivo de texto 
 void* gravar_D_ler_C(int T, char* arqC, char* arqD, int **matrizC, int* matrizD) {
     pthread_t thread_escrita;
     parametros_thread parametros_escrita;
@@ -294,6 +310,7 @@ void* gravar_D_ler_C(int T, char* arqC, char* arqD, int **matrizC, int* matrizD)
     verificar_juncao_thrd(err);
 }
 
+//Cria e realiza a junção de n threads de processamento para realizar a multiplicação das matrizes C e D, resultando na matriz E
 void* multiplicar_C_D(int qntd_thrds, int T, int* matrizC, int* matrizD, int** matrizE) {
     register int i, qntd_por_thread;
     int err;
@@ -324,6 +341,8 @@ void* multiplicar_C_D(int qntd_thrds, int T, int* matrizC, int* matrizD, int** m
     free(parametros_processamento);
 }
 
+//Cria e realiza a junção de uma thread de escrita e n threads de processamento para gravar a matriz E em arquivo de texto e somar todos os seus elementos
+//A primitiva "clock" é usada para contar o tempo de processamento da redução 
 int gravar_e_reduzir_E(int qntd_thrds, int T, char *arqE, int* matrizE, double* tempo_total) {
     register int i, qntd_por_thread, err;
     void* soma_parcial = NULL;
@@ -358,6 +377,7 @@ int gravar_e_reduzir_E(int qntd_thrds, int T, char *arqE, int* matrizE, double* 
         verificar_criacao_thrd(err);
     }
 
+    //O retorno da thread de processamento é somado à variável "soma_total" para obter a soma final dos elementos
     for(i = 0; i < qntd_thrds; i++) {
         err = pthread_join(thread_processamento[i], &soma_parcial);
         verificar_juncao_thrd(err);
@@ -375,6 +395,8 @@ int gravar_e_reduzir_E(int qntd_thrds, int T, char *arqE, int* matrizE, double* 
     return soma_total;
 }
 
+//Realiza a chamada de todas as funções de execução das threads com os parâmetros necessários
+//Realiza a contagem do tempo de execução da soma e multiplicação
 void multiplas_thrds_exe(parametros_de_exe *args, resultado_e_tempo *calculo) {
     clock_t inicio, fim;
 
@@ -395,7 +417,8 @@ void multiplas_thrds_exe(parametros_de_exe *args, resultado_e_tempo *calculo) {
     calculo->resultado_red = gravar_e_reduzir_E(args->qntd_thrds, args->tamanho, args->arqE, args->matrizE, &calculo->tempo_red);
 }
 
-//passos para n = 1
+//Inicio da execução com uma única thread
+//Semelhante à função "leitura_matriz", é executada apenas pela thread principal, sem o uso de uma thread de leitura. Retorna a matriz lida
 int* leitura_sem_threads(register int tamanho, char* nome_arq) {
 
     FILE* arq_matriz = abrir_arquivo(nome_arq, "r");
@@ -412,6 +435,7 @@ int* leitura_sem_threads(register int tamanho, char* nome_arq) {
     return matriz;
 }
 
+//Semelhante à função "gravar_matriz", é executada apenas pela thread principal, sem o uso de uma thread de escrita
 void gravacao_sem_threads(int tamanho, char* nome_arq, int* matriz) {
 
     FILE* arq_matriz = abrir_arquivo(nome_arq, "w");
@@ -428,6 +452,7 @@ void gravacao_sem_threads(int tamanho, char* nome_arq, int* matriz) {
     fclose(arq_matriz);
 }
 
+//Semelhante à função "soma_matrizes", é executada apenas pela thread principal, sem o uso de threads de processamento. Retorna a matriz resultante da soma
 int* soma_sem_threads(int *matriz_1, int *matriz_2, register int tamanho) {
 
     int *matriz_soma = aloca_matriz(tamanho, tamanho);
@@ -441,6 +466,7 @@ int* soma_sem_threads(int *matriz_1, int *matriz_2, register int tamanho) {
     return matriz_soma;
 }
 
+//Semelhante à função "multiplica_matrizes", é executada apenas pela thread principal, sem o uso de threads de processamento. Retorna a matriz resultante da multiplicação
 int* mult_sem_threads(int *matriz_1, int *matriz_2, register int tamanho) {
 
     int *matriz_mult = aloca_matriz(tamanho, tamanho);
@@ -457,6 +483,7 @@ int* mult_sem_threads(int *matriz_1, int *matriz_2, register int tamanho) {
     return matriz_mult;
 }
 
+//Semelhante à função "reduz_matriz", é executada apenas pela thread principal, sem o uso de threads de processamento. Retorna o valor resultando da redução
 int reducao_sem_threads(int *matriz, register int tamanho) {
 
     int valor_reducao = 0;
@@ -468,9 +495,10 @@ int reducao_sem_threads(int *matriz, register int tamanho) {
     }
 
     return valor_reducao;
-
 }
 
+//Realiza a chamada de todas as funções que são executadas apenas pela thread principal, atribuindo os valores de retorno às variáveis correspondentes
+//Realiza a contagem do tempo de execução da soma, multiplicação e redução
 void* unica_thrd_exe(parametros_de_exe *args, resultado_e_tempo *calculo) {
     clock_t inicio, fim;
 
@@ -501,6 +529,7 @@ void* unica_thrd_exe(parametros_de_exe *args, resultado_e_tempo *calculo) {
 
 int main(int argc, char *argv[]) {
 
+    //"atoi" converte a string recebida pela linha de comando para um inteiro, sendo "n" a quantidade de threads e "T" o tamanho das matrizes
     int n = atoi(argv[1]);
     int T = atoi(argv[2]);
 
@@ -516,6 +545,8 @@ int main(int argc, char *argv[]) {
     int *matrizD = aloca_matriz(T, T);
     int *matrizE = aloca_matriz(T, T);
 
+    //Chamada da função que cria os arquivos de entrada automaticamente
+    //Havendo arquivos de entrada prontos, a chamada pode ser removida
     gerar_matriz(T, arqA);
     gerar_matriz(T, arqB);
     gerar_matriz(T, arqC);
@@ -523,6 +554,7 @@ int main(int argc, char *argv[]) {
     double tempo_soma, tempo_mult, tempo_red;
     int reducao_resultado;
 
+    //Atribuição dos valores aos membros da estrutura "args", que são os parâmetros de execução do programa
     parametros_de_exe args;
     args.tamanho = T;
     args.qntd_thrds = n;
@@ -537,6 +569,7 @@ int main(int argc, char *argv[]) {
     args.arqD = arqD;
     args.arqE = arqE;
 
+    //Atribuição dos valores aos membros da estrutura "calculo", que representam tempos de execução das operações e o resultado da redução
     resultado_e_tempo calculo;
     calculo.tempo_mult = tempo_mult;
     calculo.tempo_red = tempo_red;

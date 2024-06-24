@@ -5,8 +5,10 @@
 #ifndef FUNCS_H_
 #define FUNCS_H_
 
+//Responsável por realizar os acesso aos elementos das matrizes alocadas em uma única etapa
 #define posicao(I, J, COLUNAS) ((I)*(COLUNAS) + (J))
 
+//Define os parâmetros que podem ser passados para uma thread.
 typedef struct {
     int indice_inicio;
     int indice_final;
@@ -17,6 +19,7 @@ typedef struct {
     int *matriz_final;
 } parametros_thread;
 
+//Define os parâmetros de execução do programa
 typedef struct {
     int tamanho;
     int qntd_thrds;
@@ -32,6 +35,7 @@ typedef struct {
     char *arqE;
 } parametros_de_exe;
 
+//Define tempos de execução e resultado da redução do programa
 typedef struct {
     double tempo_soma;
     double tempo_mult;
@@ -39,6 +43,7 @@ typedef struct {
     int resultado_red;
 } resultado_e_tempo;
 
+//Declaração de todas as funções usadas pelo programa
 parametros_thread *aloca_vetor_parametros(unsigned int tamanho);
 
 FILE *abrir_arquivo(char* nome_arq, char* modo);
