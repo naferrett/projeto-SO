@@ -1,7 +1,5 @@
 # Múltiplas Threads em C
 
-<img src="https://github.com/naferrett/projeto-SO/assets/133066462/462589ab-a574-4202-8ceb-d74aba4067cc" alt="Foca em Sistemas Operacionais">
-
 Código do projeto final da matéria de Sistemas Operacionais (TT304A) da UNICAMP.
 
 ## 😵‍💫 Problema a ser resolvido 
@@ -22,7 +20,7 @@ A tabela a seguir indica os passos e tarefas que devem ser realizadas simultanea
 - Todas as matrizes precisam ser alocadas dinamicamente;
 - Cada uma das matrizes necessárias para o programa precisa ser alocada em uma única etapa, isto é, em uma única chamada do comando malloc ou equivalente para cada matriz.
 - O programa deve compilar sem erros;
-- Os dados também devem estar armazenados em arquivos texto, conforme estabelecido na seção “Entradas e Saídas do Programa”;
+- Os dados também devem estar armazenados em arquivos texto;
 - Utilizar exatamente a linha de comando indicada -> <./programa T n arqA.dat arqB.dat arqC.dat arqD.dat arqE.dat>;
 
 ## 🚀 Clonando o projeto
@@ -69,9 +67,9 @@ Para testar a execução com uma matriz 1000x1000 com quatro threads:
 ./prog 4 1000 arqA.dat arqB.dat arqC.dat arqD.dat arqE.dat
 ```
 
-## Relatório do projeto
+## 📊 Relatório do projeto
 
-Para visualizar o relatório contendo a descrição do projeto, instruções para compilação, gráficos e análise dos resultados com a conclusão do experimento, acesse:
+Para visualizar o relatório contendo a descrição do projeto, instruções para compilação, gráficos e análise dos resultados com a conclusão do experimento, acesse o arquivo contido no repositório.
 
 ## 📝 Orientação
 
