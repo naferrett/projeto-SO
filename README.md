@@ -71,6 +71,3 @@ Para testar a execução com uma matriz 1000x1000 com quatro threads:
 
 Para visualizar o relatório contendo a descrição do projeto, instruções para compilação, gráficos e análise dos resultados com a conclusão do experimento, acesse o arquivo contido no repositório.
 
-## 📝 Orientação
-
-Esse projeto foi realizado sob orientação do Prof. André Leon S. Gradvohl, Dr.
